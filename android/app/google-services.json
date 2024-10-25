@@ -1,0 +1,29 @@
+{
+  "project_info": {
+    "project_number": "987626170682",
+    "project_id": "airgurard",
+    "storage_bucket": "airgurard.appspot.com"
+  },
+  "client": [
+    {
+      "client_info": {
+        "mobilesdk_app_id": "1:987626170682:android:f4c62da2db729dbc044803",
+        "android_client_info": {
+          "package_name": "com.pacolahd.airguard"
+        }
+      },
+      "oauth_client": [],
+      "api_key": [
+        {
+          "current_key": "AIzaSyCCq-lGnwLp7ryp45U5CX4zMBLFmvE-kTI"
+        }
+      ],
+      "services": {
+        "appinvite_service": {
+          "other_platform_oauth_client": []
+        }
+      }
+    }
+  ],
+  "configuration_version": "1"
+}

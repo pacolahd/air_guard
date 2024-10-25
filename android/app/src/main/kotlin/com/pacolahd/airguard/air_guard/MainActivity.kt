@@ -1,4 +1,4 @@
-package com.pacolahd.airguard.air_guard
+package com.pacolahd.airguard
 
 import io.flutter.embedding.android.FlutterActivity
 
