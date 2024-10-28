@@ -6,6 +6,7 @@ import 'package:air_guard/core/extensions/context_extensions.dart';
 import 'package:air_guard/core/resources/media_resources.dart';
 import 'package:air_guard/src/profile/presentation/views/about_air_guard.dart';
 import 'package:air_guard/src/profile/presentation/views/edit_profile_view.dart';
+import 'package:air_guard/src/profile/presentation/widgets/profile_header.dart';
 import 'package:firebase_auth/firebase_auth.dart';
 import 'package:flutter/material.dart';
 
@@ -27,14 +28,7 @@ class _ProfilePageState extends State<ProfilePage> {
         title: const Text(
           'Profile',
         ),
-        actions: [
-          IconButton(
-            icon: const Icon(Icons.more_vert),
-            onPressed: () {
-              // show dialog
-            },
-          ),
-        ],
+
       ),
       body: SafeArea(
         child: Container(
@@ -42,20 +36,43 @@ class _ProfilePageState extends State<ProfilePage> {
           child: ListView(
             children: [
               const SizedBox(height: 30),
+              const ProfileHeader(),
               const SizedBox(height: 70),
               Column(
                 children: [
-                  const Align(
-                    alignment: Alignment.centerLeft,
-                    child: Text(
-                      'Settings',
-                    ),
-                  ),
+                  // const Align(
+                  //   alignment: Alignment.centerLeft,
+                  //   child: Text(
+                  //     'Settings',style: TextStyle(
+                  //       fontSize: 22,
+                  //       fontWeight: FontWeight.bold,
+                  //
+                  //     ),
+                  //   ),
+                  // ),
                   const SizedBox(height: 20),
-                  ThemeToggle(),
+                  Row(
+                    mainAxisAlignment: MainAxisAlignment.spaceBetween,
+                    children: [
+                      Row(
+                        children: [
+                          Icon(
+                            Icons.brightness_4,
+                            color: context.theme.colorScheme.tertiary,
+                          ),
+                          SizedBox(width: 15),
+
+                          const Text(
+                            'Theme Mode',
+                          ),
+                        ],
+                      ),
+                      ThemeToggle(),
+                    ],
+                  ),
                   const SizedBox(height: 10),
                   CustomListTile2(
-                    leadingIconUrl: MediaRes.googleIcon,
+                    leadingIcon : Icons.person,
                     title: 'Personal Information',
                     value: true,
                     onPressed: () {
@@ -63,7 +80,7 @@ class _ProfilePageState extends State<ProfilePage> {
                     },
                   ),
                   CustomListTile2(
-                    leadingIconUrl: MediaRes.googleIcon,
+                    leadingIcon : Icons.question_mark,
                     title: 'Help and support',
                     value: true,
                     onPressed: () {
@@ -71,15 +88,15 @@ class _ProfilePageState extends State<ProfilePage> {
                     },
                   ),
                   CustomListTile2(
-                    leadingIconUrl: MediaRes.googleIcon,
-                    title: 'About KCF',
+                    leadingIcon : Icons.question_answer_rounded,
+                    title: 'About Air Guard',
                     value: true,
                     onPressed: () {
                       Navigator.pushNamed(context, AboutAirGuard.routeName);
                     },
                   ),
                   CustomListTile2(
-                    leadingIconUrl: MediaRes.googleIcon,
+                    leadingIcon : Icons.logout,
                     title: 'Logout',
                     value: true,
                     onPressed: () async {

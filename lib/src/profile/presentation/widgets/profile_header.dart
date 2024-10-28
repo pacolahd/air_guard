@@ -26,8 +26,8 @@ class ProfileHeader extends StatelessWidget {
             ),
             const SizedBox(height: 10),
             Text(
-              (user?.fullName != null && user?.fullName != null)
-                  ? '${user?.fullName} ${user?.fullName}'
+              (user?.fullName != null)
+                  ? '${user?.fullName}'
                   : 'No User',
               style: context.theme.textStyles.bodySmall,
             ),

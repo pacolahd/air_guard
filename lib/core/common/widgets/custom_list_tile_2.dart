@@ -7,14 +7,14 @@ class CustomListTile2 extends StatelessWidget {
     required this.title,
     required this.value,
     required this.onPressed,
-    this.leadingIconUrl,
-    this.trailingIconUrl,
+    this.leadingIcon ,
+    // this.trailingIconUrl,
     super.key,
   });
   final String title;
   final bool value;
-  final String? leadingIconUrl;
-  final String? trailingIconUrl;
+  final IconData? leadingIcon ;
+  // final String? trailingIconUrl;
   final VoidCallback onPressed;
 
   @override
@@ -25,20 +25,20 @@ class CustomListTile2 extends StatelessWidget {
         onTap: onPressed,
         child: Row(
           children: [
-            if (leadingIconUrl != null)
-              Image.asset(
-                leadingIconUrl!,
+            if (leadingIcon  != null)
+              Icon(
+                leadingIcon !,
                 color: context.theme.colorScheme.tertiary,
               ),
-            if (leadingIconUrl != null) const SizedBox(width: 15),
+            if (leadingIcon  != null) const SizedBox(width: 15),
             Expanded(
               child: Text(
                 title,
                 style: context.theme.textStyles.bodySmall,
               ),
             ),
-            Image.asset(
-              trailingIconUrl ?? MediaRes.googleIcon,
+            Icon(
+              Icons.arrow_forward_ios,
               color: context.theme.colorScheme.tertiary,
             ),
           ],

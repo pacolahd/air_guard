@@ -3,6 +3,8 @@ import 'package:air_guard/core/services/injection_container.dart';
 import 'package:air_guard/src/auth/data/models/user_model.dart';
 import 'package:air_guard/src/auth/presentation/bloc/auth_bloc.dart';
 import 'package:air_guard/src/dashboard/presentation/utils/dashboard_utils.dart';
+import 'package:air_guard/src/emergency_contacts/presentation/view/emergency_contacts_screen.dart';
+import 'package:air_guard/src/home/presentation/views/home_screen.dart';
 import 'package:air_guard/src/profile/presentation/views/profile_page.dart';
 import 'package:cloud_firestore/cloud_firestore.dart';
 import 'package:flutter/material.dart';
@@ -31,10 +33,10 @@ class _DashboardState extends State<Dashboard> {
     _controller = PersistentTabController(initialIndex: 0);
     super.initState();
 
-    SystemChrome.setPreferredOrientations([
-      DeviceOrientation.portraitUp,
-      DeviceOrientation.portraitDown,
-    ]);
+    // SystemChrome.setPreferredOrientations([
+    //   DeviceOrientation.portraitUp,
+    //   DeviceOrientation.portraitDown,
+    // ]);
   }
 
   List<Widget> _buildScreens() {
@@ -49,7 +51,7 @@ class _DashboardState extends State<Dashboard> {
   List<PersistentTabConfig> _tabs() => [
 
     PersistentTabConfig(
-      screen:   Container(child: Text('Home'),),
+      screen:  HomeScreen(),
       item: ItemConfig(
         icon: const Icon(Icons.home),
         title: "Home",
@@ -58,10 +60,10 @@ class _DashboardState extends State<Dashboard> {
       ),
     ),
     PersistentTabConfig(
-      screen: Container(child: Text('Contacts'),),
+      screen: EmergencyContactsScreen(),
       item: ItemConfig(
-        icon: const Icon(Icons.message),
-        title: "Messages",
+        icon: const Icon(Icons.contact_emergency),
+        title: "Emergency Contacts",
         activeForegroundColor: Colors.blue,
         inactiveBackgroundColor: Colors.white,
       ),
@@ -102,6 +104,8 @@ class _DashboardState extends State<Dashboard> {
               navBarDecoration: NavBarDecoration(color: Colors.transparent),
             ),
             navBarOverlap: NavBarOverlap.full(),
+            // resizeToAvoidBottomInset: true,
+            // avoidBottomPadding: true,
 
           ),
         );

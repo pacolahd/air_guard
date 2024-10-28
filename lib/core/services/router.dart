@@ -10,9 +10,12 @@ import 'package:air_guard/src/auth/presentation/views/forgot_password_screen.dar
 import 'package:air_guard/src/auth/presentation/views/sign_in_screen.dart';
 import 'package:air_guard/src/auth/presentation/views/sign_up_screen.dart';
 import 'package:air_guard/src/dashboard/presentation/views/dashboard.dart';
+import 'package:air_guard/src/emergency_contacts/presentation/view/emergency_contacts_screen.dart';
+import 'package:air_guard/src/home/presentation/views/home_screen.dart';
 import 'package:air_guard/src/on_boarding/presentation/cubit/on_boarding_cubit.dart';
 import 'package:air_guard/src/on_boarding/presentation/views/on_boarding_screen.dart';
 import 'package:air_guard/src/profile/presentation/views/about_air_guard.dart';
+import 'package:air_guard/src/profile/presentation/views/edit_profile_view.dart';
 import 'package:firebase_auth/firebase_auth.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter_bloc/flutter_bloc.dart';
@@ -112,13 +115,33 @@ Route<dynamic> generateRoute(RouteSettings settings) {
 
     case AboutAirGuard.routeName:
       return _pageBuilder(
-        (_) => const Dashboard(),
+        (_) => const AboutAirGuard(),
         settings: settings,
       );
 
     case Dashboard.routeName:
       return _pageBuilder(
         (_) => const Dashboard(),
+        settings: settings,
+      );
+
+    case HomeScreen.routeName:
+      return _pageBuilder(
+        (_) => const HomeScreen(),
+        settings: settings,
+      );
+
+    case EmergencyContactsScreen.routeName:
+      return _pageBuilder(
+        (_) => const EmergencyContactsScreen(),
+        settings: settings,
+      );
+    case EditProfileScreen.routeName:
+      return _pageBuilder(
+            (_) => BlocProvider(
+          create: (_) => sl<AuthBloc>(),
+          child: const EditProfileScreen(),
+        ),
         settings: settings,
       );
 
