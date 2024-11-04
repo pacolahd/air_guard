@@ -54,7 +54,7 @@ class MyApp extends StatelessWidget {
       debugShowCheckedModeBanner: false,
       title: 'Air Guard',
       theme: AppTheme.lightTheme,
-      darkTheme: AppTheme.darkTheme,
+      darkTheme: AppTheme.lightTheme,
       themeMode: context.watch<ThemeProvider>().themeMode,
       // home: const OnBoardingScreen(),
       onGenerateRoute: generateRoute,

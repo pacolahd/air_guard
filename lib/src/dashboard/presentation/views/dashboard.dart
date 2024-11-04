@@ -20,6 +20,7 @@ class Dashboard extends StatefulWidget {
 
   static const routeName = '/dashboard';
 
+
   @override
   State<Dashboard> createState() => _DashboardState();
 }
@@ -55,7 +56,7 @@ class _DashboardState extends State<Dashboard> {
       item: ItemConfig(
         icon: const Icon(Icons.home),
         title: "Home",
-        activeForegroundColor: Colors.blue,
+        activeForegroundColor: Color(0xFF388E3C),
         inactiveBackgroundColor: Colors.white,
       ),
     ),
@@ -64,7 +65,7 @@ class _DashboardState extends State<Dashboard> {
       item: ItemConfig(
         icon: const Icon(Icons.contact_emergency),
         title: "Emergency Contacts",
-        activeForegroundColor: Colors.blue,
+        activeForegroundColor: Color(0xFF388E3C),
         inactiveBackgroundColor: Colors.white,
       ),
     ),
@@ -78,7 +79,7 @@ class _DashboardState extends State<Dashboard> {
       item: ItemConfig(
         icon: const Icon(Icons.settings),
         title: "Settings",
-        activeForegroundColor: Colors.blue,
+        activeForegroundColor: Color(0xFF388E3C),
         inactiveBackgroundColor: Colors.white,
       ),
     ),
@@ -97,13 +98,14 @@ class _DashboardState extends State<Dashboard> {
         return Scaffold(
           body: PersistentTabView(
             controller: _controller,
-            // backgroundColor: Colors.red,
+            backgroundColor: Colors.white,
             tabs: _tabs(),
+            resizeToAvoidBottomInset: true,
             navBarBuilder: (navBarConfig) => Style4BottomNavBar(
               navBarConfig: navBarConfig,
               navBarDecoration: NavBarDecoration(color: Colors.transparent),
             ),
-            navBarOverlap: NavBarOverlap.full(),
+            navBarOverlap: NavBarOverlap.none(),
             // resizeToAvoidBottomInset: true,
             // avoidBottomPadding: true,
 

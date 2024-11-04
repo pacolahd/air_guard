@@ -51,25 +51,25 @@ class _ProfilePageState extends State<ProfilePage> {
                   //   ),
                   // ),
                   const SizedBox(height: 20),
-                  Row(
-                    mainAxisAlignment: MainAxisAlignment.spaceBetween,
-                    children: [
-                      Row(
-                        children: [
-                          Icon(
-                            Icons.brightness_4,
-                            color: context.theme.colorScheme.tertiary,
-                          ),
-                          SizedBox(width: 15),
-
-                          const Text(
-                            'Theme Mode',
-                          ),
-                        ],
-                      ),
-                      ThemeToggle(),
-                    ],
-                  ),
+                  // Row(
+                  //   mainAxisAlignment: MainAxisAlignment.spaceBetween,
+                  //   children: [
+                  //     Row(
+                  //       children: [
+                  //         Icon(
+                  //           Icons.brightness_4,
+                  //           color: context.theme.colorScheme.tertiary,
+                  //         ),
+                  //         SizedBox(width: 15),
+                  //
+                  //         const Text(
+                  //           'Theme Mode',
+                  //         ),
+                  //       ],
+                  //     ),
+                  //     // ThemeToggle(),
+                  //   ],
+                  // ),
                   const SizedBox(height: 10),
                   CustomListTile2(
                     leadingIcon : Icons.person,

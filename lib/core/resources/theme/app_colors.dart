@@ -74,9 +74,9 @@ class _Brand {
       ];
 
   Color get primary =>
-      const Color(0xFF2196F3); // Blue color for active elements
-  Color get primaryLight => const Color(0xFF64B5F6);
-  Color get primaryDark => const Color(0xFF1976D2);
+      const Color(0xFF388E3C); // Blue color for active elements
+  Color get primaryLight => const Color(0xFF81C784);
+  Color get primaryDark => const Color(0xFF388E3C);
   Color get secondary => const Color(0xFF4CAF50); // Green color for toggles
   Color get secondaryLight => const Color(0xFF81C784);
   Color get secondaryDark => const Color(0xFF388E3C);

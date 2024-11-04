@@ -1,8 +1,8 @@
 import 'dart:async';
-
 import 'package:air_guard/core/common/views/loading_view.dart';
 import 'package:air_guard/core/extensions/context_extensions.dart';
 import 'package:air_guard/core/resources/theme/app_theme.dart';
+import 'package:air_guard/src/emergency_contacts/presentation/view/emergency_contacts_screen.dart';
 import 'package:cached_network_image/cached_network_image.dart';
 import 'package:flutter/material.dart';
 import 'package:shadcn_ui/shadcn_ui.dart';
@@ -33,37 +33,12 @@ class _HomeScreenState extends State<HomeScreen> {
           ),
         ),
       );
-  bool APMConnected = false;
-
   // Future<void> _connectToAPI() async {
-  //   const String apiUrl = 'http://192.168.87.167/data';
-  //       // 'https://datausa.io/api/data?drilldowns=Nation&measures=Population';
-  //       // 'http://192.168.87.167/your_endpoint'; // Replace 'your_endpoint' with the actual endpoint
-  //   try {
-  //     final response = await http.get(Uri.parse(apiUrl));
+  //   setState(() {
+  //     print('loading started');
+  //     isLoading = true; // Show loading indicator
+  //   });
   //
-  //     if (response.statusCode == 200) {
-  //       // Parse the JSON data
-  //       final jsonData = json.decode(response.body);
-  //       // Do something with the jsonData
-  //       print(jsonData); // Example: print the data
-  //     } else {
-  //       // Handle the error
-  //       print('Failed to load data: ${response.statusCode}');
-  //     }
-  //   } catch (e) {
-  //     // Handle any exceptions
-  //     print('Error: $e');
-  //   }
-  // }
-
-  // Define variables to hold the data from the API
-  bool isLoading = false;
-  Map<String, dynamic>? sensorData;
-  Timer? _pollingTimer;
-
-  // // Fetch data from API and update the state
-  // Future<void> _connectToAPI() async {
   //   const String apiUrl = 'http://192.168.87.167/data';
   //   try {
   //     final response = await http.get(Uri.parse(apiUrl));
@@ -71,22 +46,56 @@ class _HomeScreenState extends State<HomeScreen> {
   //     if (response.statusCode == 200) {
   //       setState(() {
   //         sensorData = json.decode(response.body) as Map<String, dynamic>?;
+  //         // Check PM2.5 value and show alert if necessary
+  //
+  //         if (sensorData != null && sensorData!['PM2.5_standard'] as double > 20) {
+  //           _showAlertDialog();
+  //         }
   //       });
+  //       print(json.decode(response.body) as Map<String, dynamic>?);
   //     } else {
   //       print('Failed to load data: ${response.statusCode}');
   //     }
   //   } catch (e) {
   //     print('Error: $e');
+  //   } finally {
+  //     setState(() {
+  //       isLoading = false;
+  //       print('loading stopped');// Hide loading indicator
+  //     });
   //   }
   // }
+  Timer? _pollingTimer;
+  bool isLoading = false;
+  Map<String, dynamic>? sensorData;
+  bool showUnsafeAirAlert = false;
+  static const double pm25Limit = 20.0;
 
-  Future<void> _connectToAPI() async {
+  @override
+  void initState() {
+    super.initState();
+    _startPolling(); // Start periodic polling on init
+  }
+
+  @override
+  void dispose() {
+    _pollingTimer?.cancel(); // Cancel the polling timer when widget is disposed
+    super.dispose();
+  }
+
+  void _startPolling() {
+    const duration = Duration(seconds: 30); // Poll every 30 seconds
+    _pollingTimer = Timer.periodic(duration, (timer) {
+      _fetchSensorData(); // Fetch new data at each interval
+    });
+  }
+
+  Future<void> _fetchSensorData() async {
     setState(() {
-      print('loading started');
-      isLoading = true; // Show loading indicator
+      isLoading = true;
     });
 
-    const String apiUrl = 'http://192.168.87.167/data';
+    const String apiUrl = 'http://192.168.203.167/data';
     try {
       final response = await http.get(Uri.parse(apiUrl));
 
@@ -94,760 +103,258 @@ class _HomeScreenState extends State<HomeScreen> {
         setState(() {
           sensorData = json.decode(response.body) as Map<String, dynamic>?;
           // Check PM2.5 value and show alert if necessary
-
-          if (sensorData != null && sensorData!['PM2.5_standard'] as double > 20) {
-            _showAlertDialog();
-          }
+          // if (sensorData != null &&
+          //     sensorData!['PM2.5_standard'] as double > pm25Limit) {
+          //   if (showUnsafeAirAlert == false) {
+          //   showUnsafeAirAlert = true;
+          //   _showPersistentUnsafeAirDialog();
+          //   }
+          // } else {
+          //   showUnsafeAirAlert = false;
+          //   Navigator.of(context).pop(); // Close the dialog when air is safe
+          // }
         });
-        print(json.decode(response.body) as Map<String, dynamic>?);
       } else {
         print('Failed to load data: ${response.statusCode}');
       }
     } catch (e) {
-      print('Error: $e');
+      print('Error fetching data: $e');
     } finally {
       setState(() {
         isLoading = false;
-        print('loading stopped');// Hide loading indicator
       });
     }
   }
 
-  void _showAlertDialog() {
-    showDialog(
-      context: context,
-      builder: (BuildContext context) {
-        return AlertDialog(
-          title: Text('Air Quality Alert'),
-          content: Text('PM2.5 level has exceeded the safe limit!'),
-          actions: [
-            TextButton(
-              child: Text('OK'),
-              onPressed: () {
-                Navigator.of(context).pop(); // Close the dialog
-              },
+  void _showPersistentUnsafeAirDialog() {
+    if (showUnsafeAirAlert) {
+      showDialog(
+        context: context,
+        barrierDismissible: false, // Prevent dismissal
+        builder: (BuildContext context) {
+          return AlertDialog(
+            title: Text("Unsafe Air Quality"),
+            content: Column(
+              mainAxisSize: MainAxisSize.min,
+              children: [
+                Text("PM2.5 levels are high. Please move to a safer location."),
+                SizedBox(height: 10),
+                ElevatedButton(
+                  child: Text("Indicate Asthma Attack"),
+                  onPressed: () {
+                    Navigator.of(context).pop();
+                    _showEmergencyContactDialog();
+                  },
+                ),
+              ],
             ),
-          ],
-        );
-      },
-    );
+            actions: [
+              TextButton(
+                child: Text("Close"),
+                onPressed: () {
+                  showUnsafeAirAlert = false;
+                  Navigator.of(context).pop();
+                },
+              ),
+            ],
+          );
+        },
+      );
+    }
   }
 
-  void _startPolling() {
-    const duration = Duration(seconds:30); // Poll every 5 seconds
-    _pollingTimer = Timer.periodic(duration, (timer) {
-      _connectToAPI(); // Fetch new data at each interval
-    });
-  }
+  void _showEmergencyContactDialog() {
+    if (EmergencyContactsScreen.emergencyContacts.isEmpty) {
+      // Show dialog if no emergency contacts are available
+      showDialog(
+        context: context,
+        builder: (BuildContext context) {
+          return AlertDialog(
+            title: Text("No Emergency Contacts"),
+            content: Text("You have no emergency contacts added. Please add them in the settings to use this feature."),
+            actions: [
+              TextButton(
+                child: Text("OK"),
+                onPressed: () {
+                  Navigator.of(context).pop();
 
-  @override
-  void initState() {
-    super.initState();
-    _startPolling();
+                },
+              ),
+            ],
+          );
+        },
+      );
+    } else {
+      // Proceed with notifying emergency contacts
+      showDialog(
+        context: context,
+        builder: (BuildContext context) {
+          return AlertDialog(
+            title: Text("Notify Emergency Contacts"),
+            content: Text("Would you like to notify your emergency contacts?"),
+            actions: [
+              TextButton(
+                child: Text("Yes"),
+                onPressed: () {
+                  showUnsafeAirAlert = false;
+                  Navigator.of(context).pop();
+                  EmergencyContactsScreen.sendEmergencySMSWithLocation(
+                      EmergencyContactsScreen.emergencyContacts[0].phoneNumbers?.first ?? ''
+                  );
+                  // TODO: Implement additional emergency contact notifications if needed
+                },
+              ),
+              TextButton(
+                child: Text("No"),
+                onPressed: () {
+                  showUnsafeAirAlert = false;
+                  Navigator.of(context).pop();
+                  _showPersistentUnsafeAirDialog(); // Show the alert again if air is still unsafe
+                },
+              ),
+            ],
+          );
+        },
+      );
+    }
   }
-
-  @override
-  void dispose() {
-    _pollingTimer?.cancel();
-    super.dispose();
-  }
-
 
 
   @override
   Widget build(BuildContext context) {
     return Scaffold(
-        appBar: AppBar(
-          actions: [
-            Row(
-              crossAxisAlignment: CrossAxisAlignment.center,
-              mainAxisAlignment: MainAxisAlignment.end,
-              mainAxisSize: MainAxisSize.min,
-              children: [
-                Column(
-                  mainAxisAlignment: MainAxisAlignment.end,
-                  crossAxisAlignment: CrossAxisAlignment.end,
-                  mainAxisSize: MainAxisSize.min,
-                  children: [
-                    Text(
-                      'Hi, Welcome',
-                      style: TextStyle(
-                          fontSize: 13, fontWeight: FontWeight.bold, height: 1),
+      appBar: AppBar(
+        actions: [
+          Row(
+            crossAxisAlignment: CrossAxisAlignment.center,
+            mainAxisAlignment: MainAxisAlignment.end,
+            mainAxisSize: MainAxisSize.min,
+            children: [
+              Column(
+                mainAxisAlignment: MainAxisAlignment.end,
+                crossAxisAlignment: CrossAxisAlignment.end,
+                mainAxisSize: MainAxisSize.min,
+                children: [
+                  Text(
+                    'Hi, Welcome',
+                    style: TextStyle(
+                        fontSize: 13, fontWeight: FontWeight.bold, height: 1),
+                  ),
+                  Text(
+                    '${context.userProvider.user!.fullName}',
+                    style: TextStyle(
+                      fontSize: 16,
+                      fontWeight: FontWeight.bold,
                     ),
-                    Text(
-                      '${context.userProvider.user!.fullName}',
-                      style: TextStyle(
-                        fontSize: 16,
-                        fontWeight: FontWeight.bold,
-                      ),
-                    ),
-                  ],
-                ),
-                // circle avatar with user picture
-                circleAvatarWithUserPicture(
-                    url: '${context.userProvider.user!.profilePic}',
-                    radius: 18),
-              ],
-            ),
-          ],
-        ),
-        body: SafeArea(
-          child: SingleChildScrollView(
-            child: Column(
-              children: [
-                APMConnected
-                    ? Column(
-                        // mainAxisAlignment: MainAxisAlignment.spaceBetween,
-                        children: [
-                          Container(
-                            padding: const EdgeInsets.all(8),
-                            // height: context.height * 0.46,
-                            width: double.infinity,
-                            color: Colors.blue,
-                            child: Column(
-                              children: [
-                                Padding(
-                                  padding: const EdgeInsets.symmetric(
-                                      horizontal: 15, vertical: 5),
-                                  child: Row(
-                                    mainAxisAlignment:
-                                        MainAxisAlignment.spaceBetween,
-                                    children: [
-                                      Text(
-                                        'Daily AQI',
-                                        style: TextStyle(
-                                          fontSize: 15,
-                                          color: Colors.white,
-                                        ),
-                                      ),
-                                      Text(
-                                        'Week',
-                                        style: TextStyle(
-                                          fontSize: 13,
-                                          color: Colors.white,
-                                        ),
-                                      ),
-                                    ],
-                                  ),
-                                ),
-                                Container(
-                                  margin: const EdgeInsets.symmetric(
-                                      horizontal: 13),
-                                  color: Colors.white,
-                                  height: 1,
-                                  width: double.infinity,
-                                ),
-                                Padding(
-                                  padding: const EdgeInsets.all(5),
-                                  child: Row(
-                                    mainAxisAlignment:
-                                        MainAxisAlignment.spaceBetween,
-                                    children: [
-                                      Icon(
-                                        Icons.arrow_back_ios,
-                                        color: Colors.white,
-                                      ),
-                                      ...List.generate(
-                                        6,
-                                        (index) {
-                                          return DateAQICard(
-                                            day: [
-                                              'MON',
-                                              'TUE',
-                                              'WED',
-                                              'THU',
-                                              'FRI',
-                                              'SAT'
-                                            ][index],
-                                            aqi: [
-                                              33,
-                                              43,
-                                              32,
-                                              29,
-                                              31,
-                                              19
-                                            ][index], // AQI values as example
-                                            isSelected: index ==
-                                                2, // Example: Wednesday selected
-                                          );
-                                        },
-                                      ),
-                                      Icon(
-                                        Icons.arrow_forward_ios,
-                                        color: Colors.white,
-                                      ),
-                                    ],
-                                  ),
-                                ),
-                                AirQualityUI(),
-                              ],
-                            ),
-                          ),
-                          Container(
-                            margin: EdgeInsets.all(10),
-                            // height: context.height * 0.4,
-                            width: double.infinity,
-                            // color: Colors.blue,
-                            child: Column(
-                              children: [
-                                Padding(
-                                  padding: const EdgeInsets.symmetric(
-                                      horizontal: 15, vertical: 5),
-                                  child: Row(
-                                    mainAxisAlignment:
-                                        MainAxisAlignment.spaceBetween,
-                                    children: [
-                                      Text(
-                                        'Emergency Contacts',
-                                        style: TextStyle(
-                                          fontSize: 15,
-                                          color: Colors.blue,
-                                        ),
-                                      ),
-                                      Text(
-                                        'See all',
-                                        style: TextStyle(
-                                          fontSize: 13,
-                                          color: Colors.blue,
-                                        ),
-                                      ),
-                                    ],
-                                  ),
-                                ),
-                                SizedBox(
-                                  height: 25,
-                                ),
-                                Row(
-                                  children: [
-                                    Container(
-                                      margin: const EdgeInsets.symmetric(
-                                          horizontal: 8),
-                                      child: Column(
-                                        children: [
-                                          circleAvatarWithUserPicture(
-                                              url:
-                                                  'https://images.freeimages.com/fic/images/icons/573/must_have/256/user.png',
-                                              radius: 30),
-                                          Text(
-                                            'Judette Adjetey',
-                                            style: TextStyle(
-                                                fontSize: 15,
-                                                color: Colors.blue),
-                                          ),
-                                          ElevatedButton(
-                                            style: ElevatedButton.styleFrom(
-                                                backgroundColor: Colors.blue,
-                                                minimumSize: Size(
-                                                  20,
-                                                  10,
-                                                )),
-                                            onPressed: () {},
-                                            child: Text(
-                                              '       Call       ',
-                                              style: TextStyle(height: .06),
-                                            ),
-                                          )
-                                        ],
-                                      ),
-                                    ),
-                                    Container(
-                                      margin: const EdgeInsets.symmetric(
-                                          horizontal: 8),
-                                      child: Column(
-                                        children: [
-                                          circleAvatarWithUserPicture(
-                                              url:
-                                                  'https://images.freeimages.com/fic/images/icons/573/must_have/256/user.png',
-                                              radius: 30),
-                                          Text(
-                                            'Judette Adjetey',
-                                            style: TextStyle(
-                                                fontSize: 15,
-                                                color: Colors.blue),
-                                          ),
-                                          ElevatedButton(
-                                            style: ElevatedButton.styleFrom(
-                                                backgroundColor: Colors.blue,
-                                                minimumSize: Size(
-                                                  20,
-                                                  10,
-                                                )),
-                                            onPressed: () {},
-                                            child: Text(
-                                              '       Call       ',
-                                              style: TextStyle(height: .06),
-                                            ),
-                                          )
-                                        ],
-                                      ),
-                                    ),
-                                    Container(
-                                      margin: const EdgeInsets.only(left: 13),
-                                      child: Column(
-                                        children: [
-                                          circleAvatarWithUserPicture(
-                                              url:
-                                                  'https://images.freeimages.com/fic/images/icons/573/must_have/256/user.png',
-                                              radius: 30),
-                                          Text(
-                                            'Judette Adjetey',
-                                            style: TextStyle(
-                                                fontSize: 15,
-                                                color: Colors.blue),
-                                          ),
-                                          ElevatedButton(
-                                            style: ElevatedButton.styleFrom(
-                                                backgroundColor: Colors.blue,
-                                                minimumSize: Size(
-                                                  20,
-                                                  10,
-                                                )),
-                                            onPressed: () {},
-                                            child: Text(
-                                              '       Call       ',
-                                              style: TextStyle(height: .06),
-                                            ),
-                                          )
-                                        ],
-                                      ),
-                                    ),
-                                  ],
-                                ),
-                                SizedBox(
-                                  height: 25,
-                                ),
-                                Row(
-                                  children: [
-                                    Container(
-                                      margin: const EdgeInsets.symmetric(
-                                          horizontal: 8),
-                                      child: Column(
-                                        children: [
-                                          circleAvatarWithUserPicture(
-                                              url:
-                                                  'https://images.freeimages.com/fic/images/icons/573/must_have/256/user.png',
-                                              radius: 30),
-                                          Text(
-                                            'Judette Adjetey',
-                                            style: TextStyle(
-                                                fontSize: 15,
-                                                color: Colors.blue),
-                                          ),
-                                          ElevatedButton(
-                                            style: ElevatedButton.styleFrom(
-                                                backgroundColor: Colors.blue,
-                                                minimumSize: Size(
-                                                  20,
-                                                  10,
-                                                )),
-                                            onPressed: () {},
-                                            child: Text(
-                                              '       Call       ',
-                                              style: TextStyle(height: .06),
-                                            ),
-                                          )
-                                        ],
-                                      ),
-                                    ),
-                                    Container(
-                                      margin: const EdgeInsets.symmetric(
-                                          horizontal: 8),
-                                      child: Column(
-                                        children: [
-                                          circleAvatarWithUserPicture(
-                                              url:
-                                                  'https://images.freeimages.com/fic/images/icons/573/must_have/256/user.png',
-                                              radius: 30),
-                                          Text(
-                                            'Judette Adjetey',
-                                            style: TextStyle(
-                                                fontSize: 15,
-                                                color: Colors.blue),
-                                          ),
-                                          ElevatedButton(
-                                            style: ElevatedButton.styleFrom(
-                                                backgroundColor: Colors.blue,
-                                                minimumSize: Size(
-                                                  20,
-                                                  10,
-                                                )),
-                                            onPressed: () {},
-                                            child: Text(
-                                              '       Call       ',
-                                              style: TextStyle(height: .06),
-                                            ),
-                                          )
-                                        ],
-                                      ),
-                                    ),
-                                    Container(
-                                      margin: const EdgeInsets.only(left: 13),
-                                      child: Column(
-                                        children: [
-                                          circleAvatarWithUserPicture(
-                                              url:
-                                                  'https://images.freeimages.com/fic/images/icons/573/must_have/256/user.png',
-                                              radius: 30),
-                                          Text(
-                                            'Judette Adjetey',
-                                            style: TextStyle(
-                                                fontSize: 15,
-                                                color: Colors.blue),
-                                          ),
-                                          ElevatedButton(
-                                            style: ElevatedButton.styleFrom(
-                                                backgroundColor: Colors.blue,
-                                                minimumSize: Size(
-                                                  20,
-                                                  10,
-                                                )),
-                                            onPressed: () {},
-                                            child: Text(
-                                              '       Call       ',
-                                              style: TextStyle(height: .06),
-                                            ),
-                                          )
-                                        ],
-                                      ),
-                                    ),
-                                  ],
-                                ),
-                              ],
-                            ),
-                          ),
-                          SizedBox(height: 20),
-                        ],
-                      )
-                    : SafeArea(
-                  child: Column(
-                    mainAxisAlignment: MainAxisAlignment.center,
-                    children: [
-                      Center(
-                        child: ShadTheme(
-                          data: ShadThemeData(
-                              colorScheme: ShadZincColorScheme.light(),
-                              brightness: Brightness.light),
-                          child: ShadTheme(
-                            data: ShadThemeData(
-                              colorScheme: ShadZincColorScheme.light(),
-                              brightness: Brightness.light,
-                            ),
-                            child: ShadButton(
-                              onPressed: _connectToAPI, // Call the API when pressed
-                              child: Text(
-                                'Get device data\n manually',
-                                style: TextStyle(
-                                  fontSize: 20,
-                                ),
-                                softWrap: true,
-                              ),
-                              backgroundColor: Colors.blue,
-                              height: 100,
-                              width: 200,
-                              pressedBackgroundColor: Colors.blue[900],
-                            ),
-                          ),
-                        ),
-                      ),
-                      SizedBox(height: 20), // Spacing
-
-                      // Loading Indicator
-                      isLoading
-                          ? CircularProgressIndicator() // Show loading indicator
-                          : SizedBox.shrink(),
-
-                      // Display the sensor data if available
-                      sensorData != null
-                          ? Padding(
-                        padding: const EdgeInsets.all(16.0),
-                        child: Column(
-                          crossAxisAlignment: CrossAxisAlignment.start,
-                          children: [
-                            Text(
-                                "PM1.0 (Standard): ${sensorData!['PM1.0_standard']}"),
-                            Text(
-                                "PM2.5 (Standard): ${sensorData!['PM2.5_standard']}"),
-                            Text(
-                                "PM10 (Standard): ${sensorData!['PM10_standard']}"),
-                            Text(
-                                "PM1.0 (Environmental): ${sensorData!['PM1.0_env']}"),
-                            Text(
-                                "PM2.5 (Environmental): ${sensorData!['PM2.5_env']}"),
-                            Text(
-                                "PM10 (Environmental): ${sensorData!['PM10_env']}"),
-                            Text(
-                                "Particles > 0.3µm: ${sensorData!['Particles_0.3um']}"),
-                            Text(
-                                "Particles > 0.5µm: ${sensorData!['Particles_0.5um']}"),
-                            Text(
-                                "Particles > 1.0µm: ${sensorData!['Particles_1.0um']}"),
-                            Text(
-                                "Particles > 2.5µm: ${sensorData!['Particles_2.5um']}"),
-                            Text(
-                                "Particles > 5.0µm: ${sensorData!['Particles_5.0um']}"),
-                            Text(
-                                "Particles > 10µm: ${sensorData!['Particles_10um']}"),
-                            Text(
-                                "Ambient Temp (°C): ${sensorData!['AmbientTemp_C']}"),
-                            Text(
-                                "Object Temp (°C): ${sensorData!['ObjectTemp_C']}"),
-                          ],
-                        ),
-                      )
-                          : Padding(
-                        padding: const EdgeInsets.all(16.0),
-                        child: Text(
-                          "No data available. Please connect to APM.",
-                          style: TextStyle(fontSize: 16),
-                        ),
-                      ),
-                    ],
-                  ),
-
-                  // child: Column(
-                        //   children: [
-                        //     Center(
-                        //       child: ShadTheme(
-                        //         data: ShadThemeData(
-                        //             colorScheme: ShadZincColorScheme.light(),
-                        //             brightness: Brightness.light),
-                        //         child: ShadTheme(
-                        //           data: ShadThemeData(
-                        //             colorScheme: ShadZincColorScheme.light(),
-                        //             brightness: Brightness.light,
-                        //           ),
-                        //           child: ShadButton(
-                        //             onPressed:
-                        //                 _connectToAPI, // Call the API when pressed
-                        //             child: Text(
-                        //               '+ Connect APM',
-                        //               style: TextStyle(
-                        //                 fontSize: 20,
-                        //               ),
-                        //               softWrap: true,
-                        //             ),
-                        //             backgroundColor: Colors.blue,
-                        //             height: 200,
-                        //             width: 200,
-                        //             pressedBackgroundColor: Colors.blue[900],
-                        //           ),
-                        //         ),
-                        //       ),
-                        //     ), // Display the sensor data if available
-                        //     sensorData != null
-                        //         ? Column(
-                        //             children: [
-                        //               Text(
-                        //                   "PM1.0 (Standard): ${sensorData!['PM1.0_standard']}"),
-                        //               Text(
-                        //                   "PM2.5 (Standard): ${sensorData!['PM2.5_standard']}"),
-                        //               Text(
-                        //                   "PM10 (Standard): ${sensorData!['PM10_standard']}"),
-                        //               Text(
-                        //                   "PM1.0 (Environmental): ${sensorData!['PM1.0_env']}"),
-                        //               Text(
-                        //                   "PM2.5 (Environmental): ${sensorData!['PM2.5_env']}"),
-                        //               Text(
-                        //                   "PM10 (Environmental): ${sensorData!['PM10_env']}"),
-                        //               Text(
-                        //                   "Particles > 0.3µm: ${sensorData!['Particles_0.3um']}"),
-                        //               Text(
-                        //                   "Particles > 0.5µm: ${sensorData!['Particles_0.5um']}"),
-                        //               Text(
-                        //                   "Particles > 1.0µm: ${sensorData!['Particles_1.0um']}"),
-                        //               Text(
-                        //                   "Particles > 2.5µm: ${sensorData!['Particles_2.5um']}"),
-                        //               Text(
-                        //                   "Particles > 5.0µm: ${sensorData!['Particles_5.0um']}"),
-                        //               Text(
-                        //                   "Particles > 10µm: ${sensorData!['Particles_10um']}"),
-                        //               Text(
-                        //                   "Ambient Temp (°C): ${sensorData!['AmbientTemp_C']}"),
-                        //               Text(
-                        //                   "Object Temp (°C): ${sensorData!['ObjectTemp_C']}"),
-                        //             ],
-                        //           )
-                        //         : Text(
-                        //             "No data available. Please connect to APM."),
-                        //   ],
-                        // ),
-                      ),
-              ],
-            ),
-          ),
-        ));
-  }
-}
-
-class AirQualityUI extends StatelessWidget {
-  @override
-  Widget build(BuildContext context) {
-    return Padding(
-      padding: const EdgeInsets.all(8.0),
-      child: Container(
-        decoration: BoxDecoration(
-          color: Colors.white, // Adjust background if necessary
-
-          border: Border.all(color: Colors.white),
-          borderRadius: BorderRadius.circular(20),
-        ),
-        padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 10),
-        // height: 200,
-        child: Column(
-          children: [
-            Row(
-              mainAxisAlignment: MainAxisAlignment.spaceBetween,
-              children: [
-                Text(
-                  'Air Quality Index',
-                  style: TextStyle(
-                    fontSize: 15,
-                    fontWeight: FontWeight.bold,
-                  ),
-                ),
-                Text(
-                  'Last Updated: 12:00 PM',
-                  style: TextStyle(
-                    fontSize: 12,
-                    color: Colors.grey,
-                  ),
-                ),
-              ],
-            ),
-            SizedBox(height: 20),
-            Container(
-              padding: const EdgeInsets.symmetric(horizontal: 20),
-              height: 150,
-              child: LineChart(LineChartData(
-                lineBarsData: [
-                  LineChartBarData(
-                    spots: [
-                      FlSpot(0, 70),
-                      FlSpot(1, 80),
-                      FlSpot(2, 90),
-                      FlSpot(3, 75),
-                      FlSpot(4, 50),
-                      FlSpot(5, 85),
-                      FlSpot(6, 65),
-                    ],
-                    isCurved: true,
-                    color: Colors.blue,
-                    belowBarData: BarAreaData(
-                        show: true, color: Colors.blue.withOpacity(0.3)),
                   ),
                 ],
-                titlesData: FlTitlesData(
-                  show: true,
-                  bottomTitles: AxisTitles(
-                    sideTitles: SideTitles(
-                      showTitles: true,
-                      interval: 1, // Interval between titles
-                      getTitlesWidget: (value, meta) {
-                        switch (value.toInt()) {
-                          case 0:
-                            return Text('Sun',
-                                style: TextStyle(color: Colors.grey));
-                          case 1:
-                            return Text('Mon',
-                                style: TextStyle(color: Colors.grey));
-                          case 2:
-                            return Text('Tue',
-                                style: TextStyle(color: Colors.grey));
-                          case 3:
-                            return Text('Wed',
-                                style: TextStyle(color: Colors.grey));
-                          case 4:
-                            return Text('Thu',
-                                style: TextStyle(color: Colors.grey));
-                          case 5:
-                            return Text('Fri',
-                                style: TextStyle(color: Colors.grey));
-                          case 6:
-                            return Text('Sat',
-                                style: TextStyle(color: Colors.grey));
-                          default:
-                            return Text('');
-                        }
-                      },
-                      reservedSize: 20,
-                    ),
-                  ),
-                  leftTitles: AxisTitles(
-                    sideTitles: SideTitles(
-                      showTitles: false,
-                      reservedSize: 25,
-                    ),
-                  ),
-                  topTitles: AxisTitles(
-                    sideTitles: SideTitles(showTitles: false),
-                  ),
-                  rightTitles: AxisTitles(
-                    sideTitles: SideTitles(showTitles: false),
-                  ),
-                ),
-                gridData: FlGridData(
-                    show: true,
-                    drawVerticalLine: false,
-                    getDrawingHorizontalLine: (value) {
-                      return FlLine(
-                        color: Colors.grey,
-                        strokeWidth: 0.5,
-                      );
-                    }),
-                borderData: FlBorderData(show: false),
-              )),
-            ),
-          ],
-        ),
-      ),
-    );
-  }
-}
-
-class DateAQICard extends StatelessWidget {
-  final String day;
-  final int aqi;
-  final bool isSelected;
-
-  DateAQICard({required this.day, required this.aqi, this.isSelected = false});
-
-  @override
-  Widget build(BuildContext context) {
-    return Container(
-      decoration: BoxDecoration(
-        color: isSelected ? Colors.white : Colors.transparent,
-        borderRadius: BorderRadius.circular(20),
-        border: Border.all(
-          color: isSelected ? Colors.blue : Colors.white,
-          width: 1,
-        ),
-      ),
-      width: 40,
-      height: 60,
-      child: Column(
-        mainAxisAlignment: MainAxisAlignment.center,
-        children: [
-          Text(
-            '$aqi',
-            style: TextStyle(
-              fontSize: 15,
-              fontWeight: FontWeight.bold,
-              color: aqi > 40
-                  ? Colors.orange
-                  : isSelected
-                      ? Colors.blue
-                      : Colors.white,
-            ),
-          ),
-          Text(
-            day,
-            style: TextStyle(
-              fontSize: 12,
-              color: isSelected ? Colors.blue : Colors.white,
-            ),
+              ),
+              // circle avatar with user picture
+              circleAvatarWithUserPicture(
+                  url: '${context.userProvider.user!.profilePic}', radius: 18),
+            ],
           ),
         ],
       ),
+      body: SafeArea(
+          child: Padding(
+        padding: const EdgeInsets.all(16.0),
+        child: Center(
+          child:
+          Column(
+            mainAxisAlignment: MainAxisAlignment.center,
+            children: [
+              Center(
+                child: ElevatedButton(
+                  onPressed: _fetchSensorData,
+                  child: Text(
+                    'Get device data\n manually',
+                    style: TextStyle(fontSize: 20),
+                    textAlign: TextAlign.center,
+                  ),
+                ),
+              ),
+              SizedBox(height: 20),
+              isLoading ? CircularProgressIndicator() : SizedBox.shrink(),
+              sensorData != null
+                  ? _buildSensorData()
+                  : Padding(
+                padding: const EdgeInsets.all(16.0),
+                child: Text(
+                  "No data available. Please connect to APM.",
+                  style: TextStyle(fontSize: 16),
+                ),
+              ),
+            ],
+          ),
+          ),
+            ),),
     );
   }
+
+  // Widget _buildSensorData() {
+  //   return Padding(
+  //     padding: const EdgeInsets.all(16.0),
+  //     child: Column(
+  //       crossAxisAlignment: CrossAxisAlignment.start,
+  //       children: sensorData!.entries.map((entry) {
+  //         return Text("${entry.key}: ${entry.value}");
+  //       }).toList(),
+  //     ),
+  //   );
+  // }
+
+Widget _buildSensorData(){
+  return(
+  Padding(
+    padding: const EdgeInsets.all(16.0),
+    child:
+    Column(
+      crossAxisAlignment: CrossAxisAlignment.center,
+      // mainAxisAlignment: MainAxisAlignment.center,
+      children: [
+        // SizedBox(height: 100),
+        Container(
+          padding: const EdgeInsets.all(16.0),
+          decoration: BoxDecoration(
+            color: Colors.grey[200],
+            borderRadius: BorderRadius.circular(100),
+            border: Border.all(color: Colors.grey[300]!),
+          ),
+          width: 180,
+          height: 150,
+          child: Center(
+            child: Row(
+              mainAxisAlignment: MainAxisAlignment.center,
+              mainAxisSize: MainAxisSize.min,
+              children: [
+                Text(
+                  "${sensorData !=null? sensorData!['PM2.5_standard']: 'null'}",
+                  style: TextStyle(fontSize: 40),
+                ),Text(
+                  " µg/m³",
+                  style: TextStyle(fontSize: 15),
+                ),
+              ],
+            ),
+          ),
+        ),
+        SizedBox(height: 10),
+        Text('Safe', style: context.theme.textTheme.titleLarge),
+        SizedBox(height: 50),
+        ElevatedButton(
+          onPressed: () {_showEmergencyContactDialog();},
+          child: Text('Emergency'),
+          style: ElevatedButton.styleFrom(
+            shape: RoundedRectangleBorder(
+              borderRadius: BorderRadius.circular(20),
+            ),
+            minimumSize: Size(150, 50),
+          ),
+        ),
+      ],
+    ),
+  )
+  );
+}
 }
